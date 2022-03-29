@@ -71,9 +71,14 @@ void Controller::receive(std::unique_ptr<Event> e)
         Segment const& currentHead = m_segments.front();
 
         Segment newHead;
-        newHead.x = currentHead.x + ((m_currentDirection & 0b01) ? (m_currentDirection & 0b10) ? 1 : -1 : 0);
-        newHead.y = currentHead.y + (not (m_currentDirection & 0b01) ? (m_currentDirection & 0b10) ? 1 : -1 : 0);
-        newHead.ttl = currentHead.ttl;
+
+        if(m_currentDirection & 0b01) newHead.x = currentHead.x + 1;
+        else if(m_currentDirection & 0b10) newHead.x = currentHead.x - 1;
+        else newHead.x = currentHead.x;
+
+        //newHead.x = currentHead.x + ((m_currentDirection & 0b01) ? (m_currentDirection & 0b10) ? 1 : -1 : 0);
+        //newHead.y = currentHead.y + (not (m_currentDirection & 0b01) ? (m_currentDirection & 0b10) ? 1 : -1 : 0);
+        //newHead.ttl = currentHead.ttl;
 
         bool lost = false;
 
