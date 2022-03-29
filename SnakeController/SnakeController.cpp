@@ -63,6 +63,19 @@ Controller::Controller(IPort& p_displayPort, IPort& p_foodPort, IPort& p_scorePo
     }
 }
 
+template <class T, class U, class Z>
+void currentDirectionX(T T1, T T2, U U1, Z Z1){
+        U m_currentDirection;
+        Z m_segments;
+        T const& currentHead = m_segments.front();
+        T newHead;
+        if(m_currentDirection & 0b01) newHead.x = currentHead.x + 1;
+        
+        else if(m_currentDirection & 0b10) newHead.x = currentHead.x - 1;
+        
+        else newHead.x = currentHead.x;
+}
+
 void Controller::receive(std::unique_ptr<Event> e)
 {
     try {
@@ -72,9 +85,7 @@ void Controller::receive(std::unique_ptr<Event> e)
 
         Segment newHead;
 
-        if(m_currentDirection & 0b01) newHead.x = currentHead.x + 1;
-        else if(m_currentDirection & 0b10) newHead.x = currentHead.x - 1;
-        else newHead.x = currentHead.x;
+        currentDirectionX(currentHead, newHead, m_currentDirection, m_segments);
 
         //newHead.x = currentHead.x + ((m_currentDirection & 0b01) ? (m_currentDirection & 0b10) ? 1 : -1 : 0);
         //newHead.y = currentHead.y + (not (m_currentDirection & 0b01) ? (m_currentDirection & 0b10) ? 1 : -1 : 0);
@@ -196,5 +207,7 @@ void Controller::receive(std::unique_ptr<Event> e)
         }
     }
 }
+
+
 
 } // namespace Snake
