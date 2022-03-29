@@ -64,16 +64,18 @@ Controller::Controller(IPort& p_displayPort, IPort& p_foodPort, IPort& p_scorePo
 }
 
 template <class T, class U, class Z>
-void currentDirectionX(T T1, T T2, U U1, Z Z1){
+void currentDirection(T T1, T T2, U U1, Z Z1){
         U m_currentDirection;
         Z m_segments;
         T const& currentHead = m_segments.front();
         T newHead;
-        if(m_currentDirection & 0b01) newHead.x = currentHead.x + 1;
-        
-        else if(m_currentDirection & 0b10) newHead.x = currentHead.x - 1;
-        
-        else newHead.x = currentHead.x;
+        //if(m_currentDirection & 0b01) newHead.x = currentHead.x + 1;
+        //else if(m_currentDirection & 0b10) newHead.x = currentHead.x - 1;
+        //else newHead.x = currentHead.x;
+
+        newHead.x = currentHead.x + ((m_currentDirection & 0b01) ? (m_currentDirection & 0b10) ? 1 : -1 : 0);
+        newHead.y = currentHead.y + (not (m_currentDirection & 0b01) ? (m_currentDirection & 0b10) ? 1 : -1 : 0);
+        newHead.ttl = currentHead.ttl;
 }
 
 void Controller::receive(std::unique_ptr<Event> e)
@@ -85,11 +87,7 @@ void Controller::receive(std::unique_ptr<Event> e)
 
         Segment newHead;
 
-        currentDirectionX(currentHead, newHead, m_currentDirection, m_segments);
-
-        //newHead.x = currentHead.x + ((m_currentDirection & 0b01) ? (m_currentDirection & 0b10) ? 1 : -1 : 0);
-        //newHead.y = currentHead.y + (not (m_currentDirection & 0b01) ? (m_currentDirection & 0b10) ? 1 : -1 : 0);
-        //newHead.ttl = currentHead.ttl;
+        currentDirection(currentHead, newHead, m_currentDirection, m_segments);
 
         bool lost = false;
 
@@ -101,7 +99,7 @@ void Controller::receive(std::unique_ptr<Event> e)
             }
         }
 
-        if (not lost) {
+        if (!lost) {
             if (std::make_pair(newHead.x, newHead.y) == m_foodPosition) {
                 m_scorePort.send(std::make_unique<EventT<ScoreInd>>());
                 m_foodPort.send(std::make_unique<EventT<FoodReq>>());
@@ -141,13 +139,18 @@ void Controller::receive(std::unique_ptr<Event> e)
                 m_segments.end());
         }
     } catch (std::bad_cast&) {
-        try {
-            auto direction = dynamic_cast<EventT<DirectionInd> const&>(*e)->direction;
+        throw UnexpectedEventException();
+        }
 
-            if ((m_currentDirection & 0b01) != (direction & 0b01)) {
-                m_currentDirection = direction;
-            }
-        } catch (std::bad_cast&) {
+    try {
+        auto direction = dynamic_cast<EventT<DirectionInd> const&>(*e)->direction;
+
+        if ((m_currentDirection & 0b01) != (direction & 0b01)) {
+            m_currentDirection = direction;
+        }
+    } catch (std::bad_cast&) {
+        throw UnexpectedEventException();
+    }
             try {
                 auto receivedFood = *dynamic_cast<EventT<FoodInd> const&>(*e);
 
@@ -178,6 +181,9 @@ void Controller::receive(std::unique_ptr<Event> e)
                 m_foodPosition = std::make_pair(receivedFood.x, receivedFood.y);
 
             } catch (std::bad_cast&) {
+                throw UnexpectedEventException();
+            }
+
                 try {
                     auto requestedFood = *dynamic_cast<EventT<FoodResp> const&>(*e);
 
@@ -203,9 +209,9 @@ void Controller::receive(std::unique_ptr<Event> e)
                 } catch (std::bad_cast&) {
                     throw UnexpectedEventException();
                 }
-            }
-        }
-    }
+            
+        
+    
 }
 
 
